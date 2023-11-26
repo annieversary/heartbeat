@@ -1,0 +1,12 @@
+CREATE TABLE devices (
+  id INTEGER PRIMARY KEY,
+  name TEXT,
+  token TEXT NOT NULL,
+  beat_count BIGINT NOT NULL DEFAULT 0
+);
+CREATE INDEX devices_token_idx ON devices (token);
+CREATE TABLE beats (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device BIGINT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  timestamp DATETIME NOT NULL
+);

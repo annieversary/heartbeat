@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update devices set beat_count = beat_count + 1 where id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "3ac464d906cb6f4907e30659b9d678ba91e44aad68245f6604e7093f9444c53a"
+}

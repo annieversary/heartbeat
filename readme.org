@@ -1,0 +1,37 @@
+* heartbeat
+service inspired by [[https://github.com/5ht2b/heartbeat][5ht2b/heartbeat]] (and its rust reimplementation, [[https://github.com/lmaotrigine/heartbeat][lmaotrigine/heartbeat]]).
+this is much less robust and feature complete, so do check out the other options!
+
+from the original readme:
+#+begin_quote
+Works by pinging the server every minute, from any device, as long as said device is unlocked and being used (ie, you typed or used the mouse in the last two minutes).
+#+end_quote
+
+my version only supports sqlite since that's all i really care about
+
+** configuration
+create a =.env= file:
+#+begin_src
+# only sqlite is supported
+DATABASE_URL=sqlite://db/database.sqlite
+
+PORT=3000
+#+end_src
+
+to create a device, open the database manually, and create a device:
+
+#+begin_src sql
+insert into devices (name, token) values ("my device", "supersecrettoken");
+#+end_src
+
+once the server is running, you can ping the server and create a beat by
+
+#+begin_src
+curl -XPOST -H 'Authorization: supersecrettoken http://127.0.0.1:3000/api/beat
+#+end_src
+
+** clients
+*** macos/unix
+[[https://github.com/lmaotrigine/heartbeat-unix/][heartbeat-unix]]
+*** android
+A [[https://tasker.joaoapps.com/][Tasker]] project bundle available [[https://taskernet.com/shares/?user=AS35m8lYWmKlKnpucO4NKAF5nrvpAAJ9k0B16Xq4oGo55MJi%2Fne5EtkyyRTuOR565VRqEmzf468J&id=Project%3AHeartbeat][here]], created by [[https://github.com/lmaotrigine][lmaotrigine]].

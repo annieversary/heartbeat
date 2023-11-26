@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into beats (device, timestamp) values (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "206ecba4e30ab130285ed565a118558ff462bead80a9c9092714fade787fa78c"
+}
