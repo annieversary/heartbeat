@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into absences (timestamp, duration, begin_beat, end_beat) values (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "28fe05f873581cc1d3b24ce29a42648d17569ccdad0e9611b9d62bba4bd252fc"
+}
