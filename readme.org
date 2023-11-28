@@ -34,4 +34,16 @@ curl -XPOST -H 'Authorization: supersecrettoken http://127.0.0.1:3000/api/beat
 *** macos/unix
 [[https://github.com/lmaotrigine/heartbeat-unix/][heartbeat-unix]]
 *** android
-A [[https://tasker.joaoapps.com/][Tasker]] project bundle available [[https://taskernet.com/shares/?user=AS35m8lYWmKlKnpucO4NKAF5nrvpAAJ9k0B16Xq4oGo55MJi%2Fne5EtkyyRTuOR565VRqEmzf468J&id=Project%3AHeartbeat][here]], created by [[https://github.com/lmaotrigine][lmaotrigine]].
+[[https://github.com/5HT2B/heartbeat/blob/master/DOCS.md#running-client-on-android-tasker][Tasker]]. You will need to change the =Auth= header into an =Authorization=.
+this is done by changing [[https://github.com/5HT2B/heartbeat/blob/master/tasker/Ping.tsk.xml][this file]] from
+#+begin_src xml
+<Str sr="arg2" ve="3">https://frog.icu/api/beat</Str>
+<Str sr="arg3" ve="3">Auth:YOUR_AUTH_TOKEN_HERE</Str>
+#+end_src
+
+to
+
+#+begin_src xml
+<Str sr="arg2" ve="3">https://YOUR_DOMAIN/api/beat</Str>
+<Str sr="arg3" ve="3">Authorization:YOUR_AUTH_TOKEN_HERE</Str>
+#+end_src

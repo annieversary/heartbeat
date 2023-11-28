@@ -34,12 +34,19 @@ async fn main() {
         .await
         .expect("couldn't run migrations");
 
+    let longest_absence = sqlx::query_scalar!("select MAX(duration) from absences")
+        .fetch_optional(&pool)
+        .await
+        .unwrap_or_default()
+        .unwrap_or_default()
+        .unwrap_or_default();
+
     let app = Router::new()
         .route("/", get(home))
         .route("/api/beat", post(beat))
         .with_state(Arc::new(AppState {
             pool,
-            longest_absence: AtomicI64::new(0),
+            longest_absence: AtomicI64::new(longest_absence as i64),
             start_time: Utc::now(),
         }));
 
@@ -60,6 +67,7 @@ async fn main() {
 
 struct AppState {
     pool: SqlitePool,
+    /// Longest absence in seconds
     longest_absence: AtomicI64,
     start_time: DateTime<Utc>,
 }
@@ -237,7 +245,7 @@ pub fn format_relative(secs: i64) -> String {
         return "just now".into();
     }
 
-    // adapted from https://docs.rs/humantime/latest/src/humantime/duration.rs.html#297
+    // numbers taken from https://docs.rs/humantime/latest/src/humantime/duration.rs.html#297
 
     let mut s = String::new();
 
