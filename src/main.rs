@@ -9,6 +9,7 @@ use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 
 mod errors;
 mod helpers;
+mod html;
 mod routes;
 
 #[tokio::main]
@@ -39,6 +40,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(routes::home::home))
+        .route("/graph", get(routes::graph::graph))
         .route("/api/beat", post(routes::beat::beat))
         .with_state(Arc::new(AppState {
             pool,

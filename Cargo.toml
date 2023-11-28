@@ -13,3 +13,4 @@ maud = { git = "https://github.com/annieversary/maud", rev = "e39cef7b14485d0514
 dotenv = "0.15.0"
 anyhow = "1.0.75"
 chrono = "0.4.31"
+plotlib = "0.5.1"
