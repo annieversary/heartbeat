@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from beats order by id desc limit 1000",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "device",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "timestamp",
+        "ordinal": 2,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3456863b4ab2a7e360ce5116e0f77de045bcc57cd097c269052deaa7ab2d1fba"
+}

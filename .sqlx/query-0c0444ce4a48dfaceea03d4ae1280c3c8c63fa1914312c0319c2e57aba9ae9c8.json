@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select MAX(duration) from absences",
+  "describe": {
+    "columns": [
+      {
+        "name": "MAX(duration)",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "0c0444ce4a48dfaceea03d4ae1280c3c8c63fa1914312c0319c2e57aba9ae9c8"
+}
