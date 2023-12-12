@@ -15,6 +15,13 @@ li {
     font-size: 0.7rem;
 }
 
+.active {
+    color: #1da23e;
+}
+.inactive {
+    color: #d90422;
+}
+
 .recent-beats svg {
     height: 90vh;
 }

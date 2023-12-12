@@ -15,12 +15,21 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
         return Err(anyhow!("there are no heartbeats yet :3").into());
     };
 
+    let Some(first_beat) = sqlx::query!("select * from beats order by id limit 1")
+        .fetch_optional(&state.pool)
+        .await?
+    else {
+        return Err(anyhow!("there are no heartbeats yet :3").into());
+    };
+
     let last_beat_time = last_beat.timestamp.and_utc();
+    let first_beat_time = first_beat.timestamp.and_utc();
     let now = Utc::now();
 
     let dur = (now - last_beat_time).num_seconds();
     state.longest_absence.fetch_max(dur, Ordering::Relaxed);
 
+    let active = dur < 60 * 10; // 10 mins
     let since_last_beat = format_relative(dur);
     let longest_absence = format_relative(state.longest_absence.load(Ordering::Relaxed));
 
@@ -38,8 +47,20 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
             "this page displays the last time that i have unlocked/used any of my devices"
         }
         ul {
+            h4 {
+                "status: "
+                @if active {
+                    span.active {
+                        "active"
+                    }
+                } @else {
+                    span.inactive {
+                        "inactive"
+                    }
+                }
+            }
             li {
-                "last beat time: "
+                "last beat: "
                     strong {
                         (last_beat_time.format("%Y/%m/%d %H:%M UTC").to_string())
                     }
@@ -50,6 +71,8 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
                         (since_last_beat)
                     }
             }
+
+            h4 { "stats" }
             li title="longest absence since the server restarted" {
                 "longest absence: "
                     strong {
@@ -63,19 +86,27 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
                     }
             }
             li {
-                "uptime: "
+                "first beat: "
+                    strong {
+                        (first_beat_time.format("%Y/%m/%d %H:%M UTC").to_string())
+                    }
+            }
+            li {
+                "server uptime: "
                     strong {
                         (uptime)
                     }
             }
         }
 
-        p.small {
-            "if this website shows me as active but i'm not replying to your messages,"
-            br;
-            "i'm probably busy doing other things"
-            br;
-            "and i will get back to you once i can dedicate my full attention :3"
+        @if active {
+            p.small {
+                "if this website shows me as active but i'm not replying to your messages,"
+                br;
+                "i'm probably busy doing other things"
+                br;
+                "and i will get back to you once i can dedicate my full attention to you :3"
+            }
         }
     };
 
