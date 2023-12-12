@@ -101,11 +101,22 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
 
         @if active {
             p.small {
-                "if this website shows me as active but i'm not replying to your messages,"
+                "im active right now! if i'm not replying to your messages,"
                 br;
                 "i'm probably busy doing other things"
                 br;
                 "and i will get back to you once i can dedicate my full attention to you :3"
+            }
+        } @else if dur > 60 * 60 * 4 {
+            p.small {
+                "i've been inactive for more than 4 hours, which probably means im asleep,"
+                br;
+                "even if it's a weird time for my current timezone."
+                br;
+                "i have a "
+                a href="https://en.wikipedia.org/wiki/Non-24-hour_sleep%E2%80%93wake_disorder" target="_blank" {
+                    "sleep disorder"
+                }
             }
         }
     };
