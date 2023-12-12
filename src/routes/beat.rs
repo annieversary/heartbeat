@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{atomic::Ordering, Arc};
 
 use anyhow::{anyhow, Context, Result};
 use axum::{extract::State, http::HeaderMap};
@@ -48,11 +48,15 @@ pub async fn beat(
 
     tx.commit().await?;
 
-    // if the absence was longer than 1h, log it
+    // update longest absence
     if let Some(last_beat) = last_beat {
         let diff = now - last_beat.timestamp.and_utc();
+
+        let duration = diff.num_seconds();
+        state.longest_absence.fetch_max(duration, Ordering::Relaxed);
+
+        // if the absence was longer than 1h, log it
         if diff.num_hours() >= 1 {
-            let duration = diff.num_seconds();
             sqlx::query!(
                 "insert into absences (timestamp, duration, begin_beat, end_beat) values (?, ?, ?, ?)",
                 now,
