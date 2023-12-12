@@ -31,8 +31,27 @@ curl -XPOST -H 'Authorization: supersecrettoken http://127.0.0.1:3000/api/beat
 #+end_src
 
 ** clients
-*** macos/unix
-[[https://github.com/lmaotrigine/heartbeat-unix/][heartbeat-unix]]
+*** macos
+download the [[client/macos/heartbeat]] script, and save it as =~/.hearbeat/bin/heartbeat=, then make it executable
+#+begin_src sh
+$ chmod +x ~/.heartbeat/bin/heartbeat
+#+end_src
+
+then save the following as =~/.heartbeat/config=:
+#+begin_src sh
+export HEARTBEAT_AUTH='your heartbeat server token'
+export HEARTBEAT_HOSTNAME="https://your.heartbeat.domain"
+export HEARTBEAT_LOG_DIR="$HOME/Library/Logs/net.lmaotrigine.heartbeat"
+#+end_src
+
+download [[client/macos/town.versary.heartbeat.plist]] into =~/Library/LaunchAgents=, then run:
+#+begin_src sh
+$ launchctl load ~/Library/LaunchAgents/town.versary.heartbeat.plist
+#+end_src
+
+that's it!
+
+the macos client is a fork of [[https://github.com/lmaotrigine/heartbeat-unix][heartbeat-unix]]
 *** android
 [[https://github.com/5HT2B/heartbeat/blob/master/DOCS.md#running-client-on-android-tasker][Tasker]]. You will need to change the =Auth= header into an =Authorization=.
 this is done by changing [[https://github.com/5HT2B/heartbeat/blob/master/tasker/Ping.tsk.xml][this file]] from
