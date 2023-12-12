@@ -15,8 +15,60 @@ li {
     font-size: 0.7rem;
 }
 
-.graph svg {
+.recent-beats svg {
     height: 90vh;
+}
+
+.absences {
+    width: 60vw;
+}
+
+.absences .line {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.absences .line .graph {
+    width: 100%;
+    position: relative;
+}
+
+.absences .line .graph span.dots,
+.absences .line .graph span.length,
+.absences .line .graph span.start,
+.absences .line .graph span.end {
+    position: absolute;
+}
+.absences .line .graph span.dots {
+    width: 1px;
+    height: 1rem;
+    background-color: #ffa2da;
+}
+.absences .line .graph span.start,
+.absences .line .graph span.end {
+    width: 8px;
+    height: 1rem;
+}
+.absences .line .graph span.start {
+    background-color: #ac3333;
+}
+.absences .line .graph span.start:hover {
+    background-color: #c94949;
+}
+.absences .line .graph span.end {
+    background-color: #9a37ec;
+}
+.absences .line .graph span.end:hover {
+    background-color: #c737ec;
+}
+.absences .line .graph span.length {
+    background-color: #8000806e;
+    height: 1rem;
+    transition: 200ms;
+}
+.absences .line .graph span.length:hover {
+    background-color: #d715d76e;
 }
 "#;
 

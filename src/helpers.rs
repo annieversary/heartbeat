@@ -1,3 +1,5 @@
+use chrono::{DateTime, Days, Timelike, Utc};
+
 pub fn format_relative(secs: i64) -> String {
     if secs == 0 {
         return "just now".into();
@@ -41,6 +43,59 @@ pub fn format_relative(secs: i64) -> String {
     bweh!(seconds, "s", false);
 
     s
+}
+
+pub struct RangeDays {
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+}
+
+impl RangeDays {
+    pub fn new(from: DateTime<Utc>, to: DateTime<Utc>) -> Self {
+        let from = from
+            .with_hour(0)
+            .and_then(|d| d.with_minute(0))
+            .and_then(|d| d.with_second(0))
+            .and_then(|d| d.with_nanosecond(0))
+            .unwrap();
+        let to = to
+            .with_hour(0)
+            .and_then(|d| d.with_minute(0))
+            .and_then(|d| d.with_second(0))
+            .and_then(|d| d.with_nanosecond(0))
+            .unwrap();
+        Self { from, to }
+    }
+}
+
+impl Iterator for RangeDays {
+    type Item = DateTime<Utc>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.from > self.to {
+            return None;
+        }
+
+        let date = self.from;
+
+        self.from = self.from.checked_add_days(Days::new(1))?;
+
+        Some(date)
+    }
+}
+
+impl DoubleEndedIterator for RangeDays {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.from > self.to {
+            return None;
+        }
+
+        let date = self.to;
+
+        self.to = self.to.checked_sub_days(Days::new(1))?;
+
+        Some(date)
+    }
 }
 
 #[cfg(test)]
