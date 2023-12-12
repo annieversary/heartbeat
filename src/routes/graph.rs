@@ -98,6 +98,15 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
     // well, i think its gonna work fine, but we're not gonna have the middle day filled
     Ok(html! {
         .absences {
+            .line {
+                div style="color: transparent;" {"0000/00/00"}
+                .graph {
+                    @for i in 0..24 {
+                        @let perc = 100.0 * i as f32 / 24.0;
+                        span.hours style={"left: "(perc)"%;"} { (i) }
+                    }
+                }
+            }
             @for date in range.rev() {
                 .line {
                     .date {

@@ -27,13 +27,20 @@ li {
 }
 
 .absences {
-    width: 60vw;
+    width: 80vw;
 }
 
 .absences .line {
     display: flex;
     flex-direction: row;
     width: 100%;
+}
+
+.absences .line:nth-child(1) {
+    margin-bottom: 10px;
+}
+.absences .line:nth-child(2) {
+    border-top: 1px solid #ffa2da;
 }
 
 .absences .line .graph {
@@ -47,6 +54,14 @@ li {
 .absences .line .graph span.end {
     position: absolute;
 }
+
+.absences .line .graph span.hours {
+    position: absolute;
+    width: calc(100% / 24);
+    text-align: center;
+    color: #e3228f;
+}
+
 .absences .line .graph span.dots {
     width: 1px;
     height: 1rem;
