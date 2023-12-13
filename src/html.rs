@@ -22,75 +22,83 @@ li {
     color: #d90422;
 }
 
-.recent-beats svg {
-    height: 90vh;
-}
-
-.absences {
+.absences, .recent-beats {
     width: 80vw;
+    display: flex;
+    flex-direction: row;
 }
 
-.absences .line {
+.right {
+    flex: 1;
+}
+.left .line {
+    margin-right: 1rem;
+    border-right: 1px solid #ffa2da;
+}
+
+.line {
     display: flex;
     flex-direction: row;
     width: 100%;
-}
-
-.absences .line:nth-child(1) {
-    margin-bottom: 10px;
-}
-.absences .line:nth-child(2) {
-    border-top: 1px solid #ffa2da;
-}
-
-.absences .line .graph {
-    width: 100%;
+    height: 1rem;
     position: relative;
 }
 
-.absences .line .graph span.dots,
-.absences .line .graph span.length,
-.absences .line .graph span.start,
-.absences .line .graph span.end {
+.line:nth-child(1) {
+    margin-bottom: 10px;
+    border-right: unset;
+}
+.line:nth-child(2) {
+    border-top: 1px solid #ffa2da;
+}
+
+.line span {
     position: absolute;
 }
 
-.absences .line .graph span.hours {
+.absences span.hours {
     position: absolute;
     width: calc(100% / 24);
     text-align: center;
     color: #e3228f;
 }
 
-.absences .line .graph span.dots {
+.line span.dots {
     width: 1px;
     height: 1rem;
     background-color: #ffa2da;
 }
-.absences .line .graph span.start,
-.absences .line .graph span.end {
+
+.absences .line span.start,
+.absences .line span.end {
     width: 8px;
     height: 1rem;
 }
-.absences .line .graph span.start {
+.absences .line span.start {
     background-color: #ac3333;
 }
-.absences .line .graph span.start:hover {
+.absences .line span.start:hover {
     background-color: #c94949;
 }
-.absences .line .graph span.end {
+.absences .line span.end {
     background-color: #9a37ec;
 }
-.absences .line .graph span.end:hover {
+.absences .line span.end:hover {
     background-color: #c737ec;
 }
-.absences .line .graph span.length {
+.absences .line span.length {
     background-color: #8000806e;
     height: 1rem;
     transition: 200ms;
 }
-.absences .line .graph span.length:hover {
+.absences .line span.length:hover {
     background-color: #d715d76e;
+}
+
+.recent-beats .beat {
+    width: 1px;
+    height: 1rem;
+    background-color: #800080;
 }
 "#;
 

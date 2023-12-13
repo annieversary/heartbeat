@@ -45,6 +45,7 @@ pub fn format_relative(secs: i64) -> String {
     s
 }
 
+#[derive(Clone)]
 pub struct RangeDays {
     from: DateTime<Utc>,
     to: DateTime<Utc>,

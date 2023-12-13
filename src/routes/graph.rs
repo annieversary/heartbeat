@@ -1,15 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use axum::{extract::State, response::Html};
 use chrono::{DateTime, Datelike, Days, Duration, Timelike, Utc};
 use maud::{html, PreEscaped};
-use plotlib::{
-    page::Page,
-    repr::Plot,
-    style::{PointMarker, PointStyle},
-    view::ContinuousView,
-};
 
 use crate::{
     errors::AppError,
@@ -20,13 +14,11 @@ use crate::{
 
 pub async fn graph(State(state): State<Arc<AppState>>) -> Result<Html<String>, AppError> {
     let content = html! {
+        h1 { "recent beats" }
+        (recent_beats(&state).await?)
+
         h1 { "absences" }
         (absences_graph(&state).await?)
-
-        h1 { "recent beats" }
-        .recent-beats {
-            (recent_beats(&state).await?)
-        }
     };
     let content = base_template(content);
 
@@ -98,22 +90,23 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
     // well, i think its gonna work fine, but we're not gonna have the middle day filled
     Ok(html! {
         .absences {
-            .line {
-                div style="color: transparent;" {"0000/00/00"}
-                .graph {
+            .left {
+                .line style="color: transparent;" {""}
+                @for date in range.clone().rev() {
+                    .line {
+                        (date.format("%Y/%m/%d").to_string())
+                    }
+                }
+            }
+            .right {
+                .line {
                     @for i in 0..24 {
                         @let perc = 100.0 * i as f32 / 24.0;
                         span.hours style={"left: "(perc)"%;"} { (i) }
                     }
                 }
-            }
-            @for date in range.rev() {
-                .line {
-                    .date {
-                        (date.format("%Y/%m/%d").to_string())
-                    }
-
-                    .graph {
+                @for date in range.rev() {
+                    .line {
                         @for i in 0..=24 {
                             @let perc = 100.0 * i as f32 / 24.0;
                             span.dots style={"left: "(perc)"%;"} { }
@@ -144,51 +137,86 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
 }
 
 async fn recent_beats(state: &AppState) -> Result<PreEscaped<String>, AppError> {
-    let beats = sqlx::query!("select * from beats order by id desc limit 1000")
+    struct Beat {
+        device: i64,
+        date: DateTime<Utc>,
+        timestamp: f64,
+    }
+
+    let beats = sqlx::query!("select device, timestamp from beats order by id desc limit 4000")
         .fetch_all(&state.pool)
-        .await?;
+        .await?
+        .into_iter()
+        .map(|b| Beat {
+            device: b.device,
+            date: b.timestamp.and_utc(),
+            timestamp: b.timestamp.and_utc().timestamp() as f64,
+        })
+        .collect::<Vec<_>>();
 
     let devices = sqlx::query!("select * from devices")
         .fetch_all(&state.pool)
         .await?;
 
-    let markers = [PointMarker::Square, PointMarker::Circle, PointMarker::Cross];
-
-    let plots = devices.iter().enumerate().map(|(i, dev)| {
-        Plot::new(
-            beats
-                .iter()
-                .filter(|b| b.device == dev.id)
-                .map(|b| (b.timestamp.and_utc().timestamp() as f64, dev.id as f64))
-                .collect(),
-        )
-        .point_style(
-            PointStyle::new()
-                .marker(markers[i % markers.len()])
-                .colour("#DD3355"),
-        )
-    });
-
-    let mut v = ContinuousView::new()
-        .x_label("timestamp")
-        .y_label("device")
-        .y_range(0.0, devices.len() as f64);
-
-    // beats are ordered backwards
-    if let (Some(a), Some(b)) = (beats.last(), beats.first()) {
-        v = v.x_range(
-            a.timestamp.and_utc().timestamp() as f64,
-            b.timestamp.and_utc().timestamp() as f64,
-        );
-    }
-
-    for plot in plots {
-        v = v.add(plot);
-    }
-
-    let Ok(svg) = Page::single(&v).to_svg() else {
-        return Err(anyhow!("Failed to convert graph to svg").into());
+    let Some(oldest) = beats.last() else {
+        return Ok(PreEscaped("Not enough beats".to_string()));
     };
 
-    Ok(PreEscaped(svg.to_string()))
+    let now = Utc::now();
+    let range = RangeDays::new(oldest.date, now);
+
+    let diff = now.timestamp() as f64 - oldest.timestamp;
+
+    let pos = |timestamp: f64| 100.0 * (timestamp - oldest.timestamp) / diff;
+
+    Ok(html! {
+        .recent-beats {
+            .left {
+                .line style="color: transparent;" {""}
+                @for device in &devices {
+                    .line {
+                        (device.name)
+                    }
+                }
+            }
+            .right {
+                .line {
+                    @for day in range.clone() {
+                        span.hours style={"left: "(pos(day.timestamp() as f64))"%;"} { (day.format("%m/%d").to_string()) }
+                    }
+
+                    // TODO get the ones before the previous day
+
+                    @for day in range {
+                        @if oldest.date < day && day < now {
+                            span.dots style={"left: "(pos(day.timestamp() as f64))"%;"} { }
+                        }
+
+                        @let six = day.with_hour(6).unwrap();
+                        @if oldest.date < six && six < now {
+                            span.dots style={"left: "(pos(six.timestamp() as f64))"%;"} { }
+                        }
+
+                        @let twelve = day.with_hour(12).unwrap();
+                        @if oldest.date < twelve && twelve < now {
+                            span.dots style={"left: "(pos(twelve.timestamp() as f64))"%;"} { }
+                        }
+
+                        @let eight = day.with_hour(18).unwrap();
+                        @if oldest.date < eight && eight < now {
+                            span.dots style={"left: "(pos(eight.timestamp() as f64))"%;"} { }
+                        }
+                    }
+                }
+                @for device in &devices {
+                    .line {
+                        @for beat in beats.iter().filter(|b| b.device == device.id) {
+                            // TODO
+                            span.beat style={"left: "(pos(beat.timestamp))"%;"} title=(beat.date.format("%Y/%m/%d %H:%M UTC").to_string())  { }
+                        }
+                    }
+                }
+            }
+        }
+    })
 }
