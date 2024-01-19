@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from absences where duration > ? order by id desc limit 10000",
+  "query": "select * from absences where duration > ? order by id desc",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "4771617d955d5922353f4b35d56473b9499ee951ec5c277c37e501a45c6d4b85"
+  "hash": "aeca7dcb0fd43637bdf82ce083bfae37623a229be90be30d2cd053f3d5b80ccd"
 }

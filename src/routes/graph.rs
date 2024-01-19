@@ -45,8 +45,8 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
     }
 
     let absences = sqlx::query!(
-        "select * from absences where duration > ? order by id desc limit 10000",
-        60 * 60 * 2 // 2h
+        "select * from absences where duration > ? order by id desc",
+        60 * 60 // 1h
     )
     .fetch_all(&state.pool)
     .await?
