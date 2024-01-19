@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from absences where duration > ? order by id desc limit 10000",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "timestamp",
+        "ordinal": 1,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "duration",
+        "ordinal": 2,
+        "type_info": "Int64"
+      },
+      {
+        "name": "begin_beat",
+        "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "end_beat",
+        "ordinal": 4,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4771617d955d5922353f4b35d56473b9499ee951ec5c277c37e501a45c6d4b85"
+}
