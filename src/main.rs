@@ -9,11 +9,14 @@ use axum::{
 use chrono::{DateTime, Utc};
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 
+mod absence;
+mod beat;
 mod device;
 mod errors;
 mod helpers;
 mod html;
 mod routes;
+mod testing;
 
 #[tokio::main]
 async fn main() {
