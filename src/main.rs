@@ -1,4 +1,6 @@
+use std::net::SocketAddr;
 use std::sync::{atomic::AtomicI64, Arc};
+use tokio::net::TcpListener;
 
 use axum::{
     routing::{get, post},
@@ -59,10 +61,10 @@ async fn main() {
     println!("listening on http://localhost:{port}");
 
     // run it with hyper on localhost:3000
-    axum::Server::bind(&([0, 0, 0, 0], port).into())
-        .serve(app.into_make_service())
+    let listener = TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), port))
         .await
         .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 pub struct AppState {

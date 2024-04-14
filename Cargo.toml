@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6.20", features = ["headers", "macros"] }
+axum = { version = "0.7.5", features = ["macros"] }
 tokio = { version = "1.34.0", features = ["full"] }
 sqlx = { version = "0.7.3", features = ["sqlite", "chrono", "runtime-tokio"] }
 maud = { git = "https://github.com/annieversary/maud", rev = "e39cef7b14485d05146ea1e3da1d4b3c4e21aa9e" }
 dotenv = "0.15.0"
 anyhow = "1.0.75"
 chrono = "0.4.31"
+axum-test = "14.8.0"
