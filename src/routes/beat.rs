@@ -129,8 +129,18 @@ mod tests {
     async fn doesnt_create_an_absence_if_under_1h() -> Result<()> {
         let (server, state) = base().await;
 
-        // make a beat from 10 seconds ago
+        // make a beat from 10 seconds ago. since this is the most recent one, we'll use this and not create an absence
         let time = Utc::now() + TimeDelta::new(-10, 0).unwrap();
+        Beat {
+            id: 0,
+            device: 1,
+            timestamp: time.naive_utc(),
+        }
+        .create(&state.pool)
+        .await?;
+
+        // make a beat from 1 day ago
+        let time = Utc::now() + TimeDelta::days(-1);
         Beat {
             id: 0,
             device: 1,

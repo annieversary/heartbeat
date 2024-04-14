@@ -38,13 +38,25 @@ impl Beat {
         Ok(self)
     }
 
+    pub async fn first_beat<'c, E>(executor: E) -> Result<Option<Self>>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        let last_beat = sqlx::query_as!(Self, "select * from beats order by timestamp asc limit 1")
+            .fetch_optional(executor)
+            .await?;
+
+        Ok(last_beat)
+    }
+
     pub async fn last_beat<'c, E>(executor: E) -> Result<Option<Self>>
     where
         E: Executor<'c, Database = Sqlite>,
     {
-        let last_beat = sqlx::query_as!(Self, "select * from beats order by id desc limit 1")
-            .fetch_optional(executor)
-            .await?;
+        let last_beat =
+            sqlx::query_as!(Self, "select * from beats order by timestamp desc limit 1")
+                .fetch_optional(executor)
+                .await?;
 
         Ok(last_beat)
     }

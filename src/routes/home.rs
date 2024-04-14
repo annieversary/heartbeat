@@ -5,20 +5,16 @@ use axum::{extract::State, response::Html};
 use chrono::Utc;
 use maud::html;
 
-use crate::{errors::AppError, helpers::format_relative, html::base_template, AppState};
+use crate::{
+    beat::Beat, errors::AppError, helpers::format_relative, html::base_template, AppState,
+};
 
 pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, AppError> {
-    let Some(last_beat) = sqlx::query!("select * from beats order by id desc limit 1")
-        .fetch_optional(&state.pool)
-        .await?
-    else {
+    let Some(last_beat) = Beat::last_beat(&state.pool).await? else {
         return Err(anyhow!("there are no heartbeats yet :3").into());
     };
 
-    let Some(first_beat) = sqlx::query!("select * from beats order by id limit 1")
-        .fetch_optional(&state.pool)
-        .await?
-    else {
+    let Some(first_beat) = Beat::first_beat(&state.pool).await? else {
         return Err(anyhow!("there are no heartbeats yet :3").into());
     };
 
@@ -33,9 +29,7 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
     let since_last_beat = format_relative(dur);
     let longest_absence = format_relative(state.longest_absence.load(Ordering::Relaxed));
 
-    let total_beats = sqlx::query_scalar!("select count(*) from beats")
-        .fetch_one(&state.pool)
-        .await?;
+    let total_beats = Beat::count(&state.pool).await?;
 
     let uptime = format_relative((now - state.start_time).num_seconds());
 
