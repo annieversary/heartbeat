@@ -119,3 +119,55 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
 
     Ok(Html(content.0))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{device::Device, testing::init_state};
+
+    use super::*;
+    use ::axum_test::TestServer;
+    use axum::{routing::post, Router};
+    use chrono::TimeDelta;
+
+    async fn base() -> (TestServer, Arc<AppState>) {
+        let state = init_state().await;
+
+        Device {
+            id: 1,
+            name: "test device".to_string(),
+            token: "my_token".to_string(),
+            beat_count: 0,
+        }
+        .create(&state.pool)
+        .await
+        .unwrap();
+
+        let app = Router::new()
+            .route("/", post(home))
+            .with_state(state.clone());
+        let server = TestServer::new(app).unwrap();
+
+        (server, state)
+    }
+
+    #[tokio::test]
+    async fn works() -> Result<()> {
+        let (server, state) = base().await;
+
+        for i in 0..3 {
+            Beat {
+                id: 0,
+                device: 1,
+                timestamp: (Utc::now() + TimeDelta::days(-i)).naive_utc(),
+            }
+            .create(&state.pool)
+            .await?;
+        }
+
+        let response = server.post("/").await;
+
+        response.assert_status_ok();
+
+        Ok(())
+    }
+}
