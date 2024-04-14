@@ -7,6 +7,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 
+mod device;
 mod errors;
 mod helpers;
 mod html;
