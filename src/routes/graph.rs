@@ -7,6 +7,8 @@ use maud::{html, PreEscaped};
 
 use crate::{
     absence::LongAbsences,
+    beat::Beat,
+    device::Device,
     errors::AppError,
     helpers::{date_matches, RangeDays},
     html::base_template,
@@ -88,37 +90,21 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
 }
 
 async fn recent_beats(state: &AppState) -> Result<PreEscaped<String>, AppError> {
-    struct Beat {
-        device: i64,
-        date: DateTime<Utc>,
-        timestamp: f64,
-    }
+    let beats = Beat::get_recent(&state.pool).await?;
 
-    let beats = sqlx::query!("select device, timestamp from beats order by id desc limit 4000")
-        .fetch_all(&state.pool)
-        .await?
-        .into_iter()
-        .map(|b| Beat {
-            device: b.device,
-            date: b.timestamp.and_utc(),
-            timestamp: b.timestamp.and_utc().timestamp() as f64,
-        })
-        .collect::<Vec<_>>();
+    let devices = Device::get_all(&state.pool).await?;
 
-    let devices = sqlx::query!("select * from devices")
-        .fetch_all(&state.pool)
-        .await?;
-
-    let Some(oldest) = beats.last() else {
-        return Ok(PreEscaped("Not enough beats".to_string()));
-    };
+    let oldest = beats
+        .last()
+        .ok_or_else(|| AppError::html_from_str("not enough beats :3"))?;
 
     let now = Utc::now();
-    let range = RangeDays::new(oldest.date, now);
+    let range = RangeDays::new(oldest.date(), now);
 
-    let diff = now.timestamp() as f64 - oldest.timestamp;
+    let max_diff = now.timestamp() - oldest.unix_timestamp();
 
-    let pos = |timestamp: f64| 100.0 * (timestamp - oldest.timestamp) / diff;
+    let pos =
+        |timestamp: i64| 100.0 * (timestamp - oldest.unix_timestamp()) as f64 / max_diff as f64;
 
     Ok(html! {
         .recent-beats {
@@ -133,29 +119,27 @@ async fn recent_beats(state: &AppState) -> Result<PreEscaped<String>, AppError> 
             .right {
                 .line {
                     @for day in range.clone() {
-                        span.hours style={"left: "(pos(day.timestamp() as f64))"%;"} { (day.format("%m/%d").to_string()) }
+                        span.hours style={"left: "(pos(day.timestamp()))"%;"} { (day.format("%m/%d").to_string()) }
                     }
 
-                    // TODO get the ones before the previous day
-
                     @for day in range {
-                        @if oldest.date < day && day < now {
-                            span.dots style={"left: "(pos(day.timestamp() as f64))"%;"} { }
+                        @if oldest.date() < day && day < now {
+                            span.dots style={"left: "(pos(day.timestamp()))"%;"} { }
                         }
 
                         @let six = day.with_hour(6).unwrap();
-                        @if oldest.date < six && six < now {
-                            span.dots style={"left: "(pos(six.timestamp() as f64))"%;"} { }
+                        @if oldest.date() < six && six < now {
+                            span.dots style={"left: "(pos(six.timestamp()))"%;"} { }
                         }
 
                         @let twelve = day.with_hour(12).unwrap();
-                        @if oldest.date < twelve && twelve < now {
-                            span.dots style={"left: "(pos(twelve.timestamp() as f64))"%;"} { }
+                        @if oldest.date() < twelve && twelve < now {
+                            span.dots style={"left: "(pos(twelve.timestamp()))"%;"} { }
                         }
 
                         @let eight = day.with_hour(18).unwrap();
-                        @if oldest.date < eight && eight < now {
-                            span.dots style={"left: "(pos(eight.timestamp() as f64))"%;"} { }
+                        @if oldest.date() < eight && eight < now {
+                            span.dots style={"left: "(pos(eight.timestamp()))"%;"} { }
                         }
                     }
                 }
@@ -163,7 +147,7 @@ async fn recent_beats(state: &AppState) -> Result<PreEscaped<String>, AppError> 
                     .line {
                         @for beat in beats.iter().filter(|b| b.device == device.id) {
                             // TODO
-                            span.beat style={"left: "(pos(beat.timestamp))"%;"} title=(beat.date.format("%Y/%m/%d %H:%M UTC").to_string())  { }
+                            span.beat style={"left: "(pos(beat.unix_timestamp()))"%;"} title=(beat.date().format("%Y/%m/%d %H:%M UTC").to_string())  { }
                         }
                     }
                 }

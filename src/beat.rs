@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use sqlx::{Executor, Sqlite};
 
 pub struct Beat {
@@ -9,7 +9,14 @@ pub struct Beat {
 }
 
 impl Beat {
-    #[allow(dead_code)]
+    pub fn date(&self) -> DateTime<Utc> {
+        self.timestamp.and_utc()
+    }
+
+    pub fn unix_timestamp(&self) -> i64 {
+        self.timestamp.and_utc().timestamp()
+    }
+
     pub async fn count<'c, E>(executor: E) -> Result<i32>
     where
         E: Executor<'c, Database = Sqlite>,
@@ -18,6 +25,19 @@ impl Beat {
             .fetch_one(executor)
             .await?;
         Ok(count)
+    }
+
+    pub async fn get_recent<'c, E>(executor: E) -> Result<Vec<Self>>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        let beats = sqlx::query_as!(
+            Self,
+            "select id, device, timestamp from beats order by id desc limit 4000"
+        )
+        .fetch_all(executor)
+        .await?;
+        Ok(beats)
     }
 
     pub async fn create<'c, E>(mut self, pool: E) -> Result<Self>

@@ -48,6 +48,20 @@ impl FromRequestParts<Arc<AppState>> for Device {
 }
 
 impl Device {
+    pub async fn get_all<'c, E>(executor: E) -> Result<Vec<Self>>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        let device = sqlx::query_as!(
+            Device,
+            "select id as \"id!\", name as \"name!\", token, beat_count from devices",
+        )
+        .fetch_all(executor)
+        .await?;
+
+        Ok(device)
+    }
+
     pub async fn get_by_auth<'c, E>(auth: &str, executor: E) -> Result<Option<Self>>
     where
         E: Executor<'c, Database = Sqlite>,
