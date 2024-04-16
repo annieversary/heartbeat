@@ -126,6 +126,7 @@ mod tests {
 
     use super::*;
     use ::axum_test::TestServer;
+    use assertables::*;
     use axum::{routing::post, Router};
     use chrono::TimeDelta;
 
@@ -151,22 +152,85 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn works() -> Result<()> {
-        let (server, state) = base().await;
-
-        for i in 0..3 {
-            Beat {
-                id: 0,
-                device: 1,
-                timestamp: (Utc::now() + TimeDelta::days(-i)).naive_utc(),
-            }
-            .create(&state.pool)
-            .await?;
-        }
+    async fn doesnt_panic_with_no_pings() -> Result<()> {
+        let (server, _state) = base().await;
 
         let response = server.post("/").await;
 
         response.assert_status_ok();
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn works() -> Result<()> {
+        for num in [1, 3, 5, 200] {
+            let (server, state) = base().await;
+
+            for i in 0..num {
+                Beat {
+                    id: 0,
+                    device: 1,
+                    timestamp: (Utc::now() - TimeDelta::days(i)).naive_utc(),
+                }
+                .create(&state.pool)
+                .await?;
+            }
+
+            let response = server.post("/").await;
+
+            response.assert_status_ok();
+            assert_contains!(
+                response.text(),
+                &format!("total beats: <strong>{num}</strong>")
+            );
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn is_inactive() -> Result<()> {
+        let (server, state) = base().await;
+
+        Beat {
+            id: 0,
+            device: 1,
+            timestamp: (Utc::now() - TimeDelta::minutes(11)).naive_utc(),
+        }
+        .create(&state.pool)
+        .await?;
+
+        let response = server.post("/").await;
+
+        response.assert_status_ok();
+        assert_contains!(
+            response.text(),
+            "status: <span class=\"inactive\">inactive</span>"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn is_active() -> Result<()> {
+        let (server, state) = base().await;
+
+        Beat {
+            id: 0,
+            device: 1,
+            timestamp: (Utc::now() - TimeDelta::minutes(9)).naive_utc(),
+        }
+        .create(&state.pool)
+        .await?;
+
+        let response = server.post("/").await;
+
+        response.assert_status_ok();
+        assert_contains!(
+            response.text(),
+            "status: <span class=\"active\">active</span>"
+        );
 
         Ok(())
     }
