@@ -2,7 +2,7 @@ use anyhow::Result;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use sqlx::{Executor, Sqlite};
 
-use crate::helpers::format_relative;
+use crate::helpers::{date_matches, format_relative, RangeDays};
 
 pub struct Absence {
     pub id: i64,
@@ -27,20 +27,6 @@ impl Absence {
             self.end().format("%Y/%m/%d %H:%M UTC"),
             format_relative(self.duration)
         )
-    }
-
-    pub async fn long_absences<'c, E>(executor: E) -> Result<Vec<Self>>
-    where
-        E: Executor<'c, Database = Sqlite>,
-    {
-        let absences = sqlx::query_as!(
-            Absence,
-            "select * from absences where duration > ? order by id desc",
-            60 * 60 // 1h
-        )
-        .fetch_all(executor)
-        .await?;
-        Ok(absences)
     }
 
     #[allow(dead_code)]
@@ -72,5 +58,48 @@ impl Absence {
         self.id = id;
 
         Ok(self)
+    }
+}
+
+pub struct LongAbsences {
+    absences: Vec<Absence>,
+}
+
+impl LongAbsences {
+    pub async fn get<'c, E>(executor: E) -> Result<Self>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        let absences = sqlx::query_as!(
+            Absence,
+            "select * from absences where duration > ? order by id desc",
+            60 * 60 // 1h
+        )
+        .fetch_all(executor)
+        .await?;
+        Ok(Self { absences })
+    }
+
+    /// get a range of days that encompasses all the absences
+    pub fn range(&self) -> Option<RangeDays> {
+        let newest = self.absences.first()?;
+        let oldest = self.absences.last()?;
+
+        Some(RangeDays::new(oldest.start(), newest.end()))
+    }
+
+    /// get absences that start or end on this day
+    pub fn absences_on(&self, d: DateTime<Utc>) -> Vec<&Absence> {
+        let mut a = self
+            .absences
+            .iter()
+            .filter(|abs| {
+                let t1 = abs.start();
+                let t2 = abs.end();
+                date_matches(t1, d) || date_matches(t2, d)
+            })
+            .collect::<Vec<_>>();
+        a.sort_unstable_by_key(|abs| abs.start());
+        a
     }
 }

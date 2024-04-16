@@ -1,4 +1,8 @@
-use chrono::{DateTime, Days, Timelike, Utc};
+use chrono::{DateTime, Datelike, Days, Timelike, Utc};
+
+pub fn date_matches(a: DateTime<Utc>, b: DateTime<Utc>) -> bool {
+    a.day() == b.day() && a.month() == b.month() && a.year() == b.year()
+}
 
 pub fn format_relative(secs: i64) -> String {
     if secs == 0 {

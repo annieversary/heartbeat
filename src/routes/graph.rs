@@ -2,11 +2,15 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use axum::{extract::State, response::Html};
-use chrono::{DateTime, Datelike, Days, Timelike, Utc};
+use chrono::{DateTime, Days, Timelike, Utc};
 use maud::{html, PreEscaped};
 
 use crate::{
-    absence::Absence, errors::AppError, helpers::RangeDays, html::base_template, AppState,
+    absence::LongAbsences,
+    errors::AppError,
+    helpers::{date_matches, RangeDays},
+    html::base_template,
+    AppState,
 };
 
 pub async fn graph(State(state): State<Arc<AppState>>) -> Result<Html<String>, AppError> {
@@ -23,31 +27,11 @@ pub async fn graph(State(state): State<Arc<AppState>>) -> Result<Html<String>, A
 }
 
 async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError> {
-    let absences = Absence::long_absences(&state.pool).await?;
+    let absences = LongAbsences::get(&state.pool).await?;
 
-    let (Some(newest), Some(oldest)) = (absences.first(), absences.last()) else {
-        return Err(AppError::html_from_str("not enough absences :3"));
-    };
-
-    let range = RangeDays::new(oldest.start(), newest.end());
-
-    fn date_matches(a: DateTime<Utc>, b: DateTime<Utc>) -> bool {
-        a.day() == b.day() && a.month() == b.month() && a.year() == b.year()
-    }
-
-    // get absences that start or end on this day
-    let absences_on = |d: DateTime<Utc>| {
-        let mut a = absences
-            .iter()
-            .filter(|abs| {
-                let t1 = abs.start();
-                let t2 = abs.end();
-                date_matches(t1, d) || date_matches(t2, d)
-            })
-            .collect::<Vec<_>>();
-        a.sort_unstable_by_key(|abs| abs.start());
-        a
-    };
+    let range = absences
+        .range()
+        .ok_or_else(|| AppError::html_from_str("not enough absences :3"))?;
 
     fn pos(date: DateTime<Utc>) -> f32 {
         100.0 * (date.hour() as f32 * 60.0 + date.minute() as f32) / (24.0 * 60.0)
@@ -79,7 +63,7 @@ async fn absences_graph(state: &AppState) -> Result<PreEscaped<String>, AppError
                             span.dots style={"left: "(perc)"%;"} { }
                         }
 
-                        @for abs in absences_on(date) {
+                        @for abs in absences.absences_on(date) {
                             // line between
                             @let start = if date_matches(abs.start(), date) { abs.start() } else { date };
                             @let length = if date_matches(abs.end(), date) { abs.end() - start } else { date.checked_add_days(Days::new(1)).unwrap() - start }.num_seconds() as f32;
