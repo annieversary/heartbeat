@@ -1,6 +1,6 @@
 use std::sync::{atomic::Ordering, Arc};
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use axum::{extract::State, response::Html};
 use chrono::Utc;
 use maud::html;
@@ -10,13 +10,14 @@ use crate::{
 };
 
 pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, AppError> {
-    let Some(last_beat) = Beat::last_beat(&state.pool).await? else {
-        return Err(anyhow!("there are no heartbeats yet :3").into());
-    };
+    let first_beat = Beat::first_beat(&state.pool)
+        .await?
+        .ok_or_else(|| AppError::html_from_str("there are no heartbeats yet :3"))?;
+    let last_beat = Beat::last_beat(&state.pool)
+        .await?
+        .ok_or_else(|| AppError::html_from_str("there are no heartbeats yet :3"))?;
 
-    let Some(first_beat) = Beat::first_beat(&state.pool).await? else {
-        return Err(anyhow!("there are no heartbeats yet :3").into());
-    };
+    let total_beats = Beat::count(&state.pool).await?;
 
     let last_beat_time = last_beat.timestamp.and_utc();
     let first_beat_time = first_beat.timestamp.and_utc();
@@ -26,12 +27,6 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
     state.longest_absence.fetch_max(dur, Ordering::Relaxed);
 
     let active = dur < 60 * 10; // 10 mins
-    let since_last_beat = format_relative(dur);
-    let longest_absence = format_relative(state.longest_absence.load(Ordering::Relaxed));
-
-    let total_beats = Beat::count(&state.pool).await?;
-
-    let uptime = format_relative((now - state.start_time).num_seconds());
 
     let content = html! {
         p {
@@ -62,7 +57,7 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
             li {
                 "time since last beat: "
                     strong {
-                        (since_last_beat)
+                        (format_relative(dur))
                     }
             }
 
@@ -70,7 +65,7 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
             li title="longest absence since the server restarted" {
                 "longest absence: "
                     strong {
-                        (longest_absence)
+                        (format_relative(state.longest_absence.load(Ordering::Relaxed)))
                     }
             }
             li {
@@ -88,7 +83,7 @@ pub async fn home(State(state): State<Arc<AppState>>) -> Result<Html<String>, Ap
             li {
                 "server uptime: "
                     strong {
-                        (uptime)
+                        (format_relative((now - state.start_time).num_seconds()))
                     }
             }
         }
@@ -158,6 +153,7 @@ mod tests {
         let response = server.post("/").await;
 
         response.assert_status_ok();
+        assert_contains!(response.text(), "no heartbeats yet");
 
         Ok(())
     }
