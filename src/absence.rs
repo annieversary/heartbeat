@@ -6,9 +6,13 @@ use crate::helpers::{date_matches, format_relative, RangeDays};
 
 pub struct Absence {
     pub id: i64,
+    /// time this absence ended at
     pub timestamp: NaiveDateTime,
+    /// duration of absence in seconds
     pub duration: i64,
+    /// id of the starting beat
     pub begin_beat: i64,
+    /// id of the ending beat
     pub end_beat: i64,
 }
 
@@ -27,6 +31,10 @@ impl Absence {
             self.end().format("%Y/%m/%d %H:%M UTC"),
             format_relative(self.duration)
         )
+    }
+
+    pub fn contains(&self, timestamp: &DateTime<Utc>) -> bool {
+        (self.timestamp.and_utc() - timestamp).num_seconds() < self.duration
     }
 
     #[allow(dead_code)]
@@ -59,6 +67,31 @@ impl Absence {
 
         Ok(self)
     }
+
+    pub async fn delete<'c, E>(&self, executor: E) -> Result<()>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        sqlx::query!("delete from absences where id = ?", self.id,)
+            .execute(executor)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn get_all_before<'c, E>(timestamp: &NaiveDateTime, executor: E) -> Result<Vec<Self>>
+    where
+        E: Executor<'c, Database = Sqlite>,
+    {
+        let beats = sqlx::query_as!(
+            Self,
+            "select * from absences where timestamp > ?",
+            timestamp
+        )
+        .fetch_all(executor)
+        .await?;
+        Ok(beats)
+    }
 }
 
 pub struct LongAbsences {
@@ -72,7 +105,7 @@ impl LongAbsences {
     {
         let absences = sqlx::query_as!(
             Absence,
-            "select * from absences where duration > ? order by id desc",
+            "select * from absences where duration > ? order by timestamp desc",
             60 * 60 // 1h
         )
         .fetch_all(executor)
@@ -101,5 +134,32 @@ impl LongAbsences {
             .collect::<Vec<_>>();
         a.sort_unstable_by_key(|abs| abs.start());
         a
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeDelta;
+
+    use super::*;
+
+    #[test]
+    fn test_contains() {
+        let now = Utc::now();
+
+        let absence = Absence {
+            id: 0,
+            timestamp: now.naive_utc(),
+            duration: 400,
+            begin_beat: 0,
+            end_beat: 0,
+        };
+
+        assert!(absence.contains(&(now - TimeDelta::seconds(200))));
+        assert!(absence.contains(&(now - TimeDelta::seconds(200))));
+        assert!(absence.contains(&(now - TimeDelta::seconds(399))));
+
+        assert!(!absence.contains(&(now - TimeDelta::seconds(400))));
+        assert!(!absence.contains(&(now - TimeDelta::seconds(401))));
     }
 }

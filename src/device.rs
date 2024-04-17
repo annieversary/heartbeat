@@ -94,12 +94,13 @@ impl Device {
         Ok(())
     }
 
-    pub async fn increase_beat_count<'c, E>(&self, executor: E) -> Result<()>
+    pub async fn increase_beat_count<'c, E>(&self, amount: i64, executor: E) -> Result<()>
     where
         E: Executor<'c, Database = Sqlite>,
     {
         sqlx::query!(
-            "update devices set beat_count = beat_count + 1 where id = ?",
+            "update devices set beat_count = beat_count + ? where id = ?",
+            amount,
             self.id,
         )
         .execute(executor)

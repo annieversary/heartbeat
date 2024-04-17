@@ -6,7 +6,7 @@ use chrono::Utc;
 
 use crate::{absence::Absence, beat::Beat, device::Device, errors::AppError, AppState};
 
-pub async fn beat(device: Device, State(state): State<Arc<AppState>>) -> Result<String, AppError> {
+pub async fn beat(State(state): State<Arc<AppState>>, device: Device) -> Result<String, AppError> {
     let last_beat = Beat::last_beat(&state.pool).await?;
 
     let mut tx = state.pool.begin().await?;
@@ -20,7 +20,7 @@ pub async fn beat(device: Device, State(state): State<Arc<AppState>>) -> Result<
     .create(&mut *tx)
     .await?;
 
-    device.increase_beat_count(&mut *tx).await?;
+    device.increase_beat_count(1, &mut *tx).await?;
 
     tx.commit().await?;
 
@@ -181,6 +181,7 @@ mod tests {
         response.assert_status_ok();
 
         assert_eq!(1, Absence::count(&state.pool).await?);
+        assert_eq!(86400, state.longest_absence.load(Ordering::Relaxed));
 
         Ok(())
     }
