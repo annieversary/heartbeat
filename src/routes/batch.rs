@@ -2,13 +2,12 @@ use std::sync::{atomic::Ordering, Arc};
 
 use anyhow::{anyhow, Result};
 use axum::{extract::State, Json};
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 
 use crate::{absence::Absence, beat::Beat, device::Device, errors::AppError, AppState};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct BeatBatch {
-    // TODO figure this out
     timestamps: Vec<NaiveDateTime>,
 }
 
