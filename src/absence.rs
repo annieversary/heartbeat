@@ -4,6 +4,7 @@ use sqlx::{Executor, Sqlite};
 
 use crate::helpers::{date_matches, format_relative, RangeDays};
 
+#[derive(Debug)]
 pub struct Absence {
     pub id: i64,
     /// time this absence ended at

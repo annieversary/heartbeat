@@ -49,6 +49,7 @@ async fn main() {
         .route("/graph", get(routes::graph::graph))
         .route("/report", get(routes::report::report))
         .route("/api/beat", post(routes::beat::beat))
+        .route("/api/batch", post(routes::batch::batch))
         .with_state(Arc::new(AppState {
             pool,
             longest_absence: AtomicI64::new(longest_absence as i64),
